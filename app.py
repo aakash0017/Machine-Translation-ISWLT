@@ -162,7 +162,7 @@ def preprocess_test_function(examples):
 
 
 class TranslationDataModule(pl.LightningDataModule):
-    def __init__(self, batch_size: int = 16, num_workers: int = 2):
+    def __init__(self, batch_size: int = 16, num_workers: int = 16):
         super().__init__()
 
         # Define the model
