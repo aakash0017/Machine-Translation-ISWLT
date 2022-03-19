@@ -511,8 +511,6 @@ class Translation(pl.LightningModule):
         return preds, labels
 
 if __name__ == "__main__":
-    os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
-
     # Load a metric
     metric = load_metric("sacrebleu")
 
@@ -553,7 +551,7 @@ if __name__ == "__main__":
         #profiler='simple',
         deterministic=True,
         max_epochs=1,
-        gpus=4,
+        gpus=2,
         limit_train_batches=0.5,
         limit_val_batches=1.0,
         limit_test_batches=1.0,
