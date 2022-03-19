@@ -7,8 +7,9 @@
 #
 #SBATCH --ntasks=8
 #SBACTH
-#SBATCH --mem=16G
+#SBATCH --mem=8G
+#SBATCH -p k2-gpu
 #SBATCH --gres=gpu:1
-#SBATCH --time=06:00:00 
+#SBATCH --time=6:00:00 
 
 python3 train.py
