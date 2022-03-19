@@ -529,8 +529,11 @@ if __name__ == "__main__":
 
     # extract data from remote repo  
     s3 = S3FileSystem(key='AKIA4QB2WTN57SCTNAGG', secret='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')
+    print("loading train data")
     train_data = datasets.load_from_disk('s3://mtacl/tokenized_data/train_ver', fs=s3)
+    print("loading test data")
     test_data = datasets.load_from_disk('s3://mtacl/tokenized_data/test_ver', fs=s3)
+    print("loading validation data")
     val_data = datasets.load_from_disk('s3://mtacl/tokenized_data/validation_ver', fs=s3)
 
     # ------------------------
@@ -540,6 +543,8 @@ if __name__ == "__main__":
     root_dir = os.getcwd()
     parent_parser = ArgumentParser(add_help=False)
     parent_parser = pl.Trainer.add_argparse_args(parent_parser)
+
+    print("Cuda availability: ", torch.cuda.is_available())
 
     # each LightningModule defines arguments relevant to it
     parser = Translation.add_model_specific_args(parent_parser,root_dir)

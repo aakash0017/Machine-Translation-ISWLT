@@ -11,3 +11,5 @@
 #SBATCH --cpus-per-task=40
 #SBATCH --gres=gpu:1
 #SBATCH --time=0-6:00:00 
+
+python3 train.py
