@@ -25,21 +25,6 @@ from sklearn.model_selection import train_test_split
 import sklearn.preprocessing
 from argparse import ArgumentParser
 import os
-os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
-
-# Load a metric
-metric = load_metric("sacrebleu")
-
-# Define the Pre-Trained Models
-max_source_length = 128
-max_target_length = 128
-source_lang = "en"
-target_lang = "de"
-model_checkpoint = 'Helsinki-NLP/opus-mt-en-de'
-transformer_model = transformers.MarianModel.from_pretrained(model_checkpoint)
-transformer_tokenizer = transformers.MarianTokenizer.from_pretrained(model_checkpoint)
-transformer_config = transformers.MarianConfig.from_pretrained(model_checkpoint)
-print(hasattr(transformer_model, "prepare_decoder_input_ids_from_labels"))
 
 # add verbosity variable to the input text
 def add_verbosity(inputs: list, targets: list, test=False):
@@ -80,12 +65,6 @@ def preprocess_function(examples):
 
     model_inputs["labels"] = labels["input_ids"]
     return model_inputs
-
-# extract data from remote repo  
-s3 = S3FileSystem(key='AKIA4QB2WTN57SCTNAGG', secret='GcJ6N4E23VEdkRymcrFWPu24KyFUlPXw8p9ge36x')
-train_data = datasets.load_from_disk('s3://mtacl/tokenized_data/train_ver', fs=s3)
-test_data = datasets.load_from_disk('s3://mtacl/tokenized_data/test_ver', fs=s3)
-val_data = datasets.load_from_disk('s3://mtacl/tokenized_data/validation_ver', fs=s3)
 
 # Define the Transaltion Module
 class TranslationDataModule(pl.LightningDataModule):
@@ -531,77 +510,100 @@ class Translation(pl.LightningModule):
 
         return preds, labels
 
+if __name__ == "__main__":
+    os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 
-# ------------------------
-# TRAINING ARGUMENTS
-# ------------------------
-# these are project-wide arguments
-root_dir = os.getcwd()
-parent_parser = ArgumentParser(add_help=False)
-parent_parser = pl.Trainer.add_argparse_args(parent_parser)
+    # Load a metric
+    metric = load_metric("sacrebleu")
 
-# each LightningModule defines arguments relevant to it
-parser = Translation.add_model_specific_args(parent_parser,root_dir)
+    # Define the Pre-Trained Models
+    max_source_length = 128
+    max_target_length = 128
+    source_lang = "en"
+    target_lang = "de"
+    model_checkpoint = 'Helsinki-NLP/opus-mt-en-de'
+    transformer_model = transformers.MarianModel.from_pretrained(model_checkpoint)
+    transformer_tokenizer = transformers.MarianTokenizer.from_pretrained(model_checkpoint)
+    transformer_config = transformers.MarianConfig.from_pretrained(model_checkpoint)
+    print(hasattr(transformer_model, "prepare_decoder_input_ids_from_labels"))
 
-parser.set_defaults(
-    #profiler='simple',
-    deterministic=True,
-    max_epochs=1,
-    gpus=1,
-    limit_train_batches=0.5,
-    limit_val_batches=1.0,
-    limit_test_batches=1.0,
-    distributed_backend=None,
-    fast_dev_run=False,
-    model_load=False,
-    model_name='best_model',
-)
+    # extract data from remote repo  
+    s3 = S3FileSystem(key='AKIA4QB2WTN57SCTNAGG', secret='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')
+    train_data = datasets.load_from_disk('s3://mtacl/tokenized_data/train_ver', fs=s3)
+    test_data = datasets.load_from_disk('s3://mtacl/tokenized_data/test_ver', fs=s3)
+    val_data = datasets.load_from_disk('s3://mtacl/tokenized_data/validation_ver', fs=s3)
 
-args, extra = parser.parse_known_args()
+    # ------------------------
+    # TRAINING ARGUMENTS
+    # ------------------------
+    # these are project-wide arguments
+    root_dir = os.getcwd()
+    parent_parser = ArgumentParser(add_help=False)
+    parent_parser = pl.Trainer.add_argparse_args(parent_parser)
 
-""" Main training routine specific for this project. """
-# ------------------------
-# 1 INIT LIGHTNING MODEL
-# ------------------------
-if (vars(args)['model_load']):
-  model = Translation.load_from_checkpoint(vars(args)['model_name'])
-else:  
-  model = Translation(**vars(args))
+    # each LightningModule defines arguments relevant to it
+    parser = Translation.add_model_specific_args(parent_parser,root_dir)
 
-# ------------------------
-# 2 CALLBACKS of MODEL
-# ------------------------
+    parser.set_defaults(
+        #profiler='simple',
+        deterministic=True,
+        max_epochs=1,
+        gpus=1,
+        limit_train_batches=0.5,
+        limit_val_batches=1.0,
+        limit_test_batches=1.0,
+        distributed_backend=None,
+        fast_dev_run=False,
+        model_load=False,
+        model_name='best_model',
+    )
 
-# callbacks
-early_stop = EarlyStopping(
-    monitor='val_loss',
-    min_delta=0.0,
-    patience=3,
-    verbose=True,
-    mode='min',
-    strict=True,
-)
+    args, extra = parser.parse_known_args()
+    print(args)
 
-lr_monitor = LearningRateMonitor(logging_interval='step')
+    """ Main training routine specific for this project. """
+    # ------------------------
+    # 1 INIT LIGHTNING MODEL
+    # ------------------------
+    if (vars(args)['model_load']):
+        model = Translation.load_from_checkpoint(vars(args)['model_name'])
+    else:  
+        model = Translation(**vars(args))
 
-checkpoint_callback = ModelCheckpoint(
-     monitor='val_loss',
-     #dirpath='my/path/',
-     filename='translat-gertoen-epoch{epoch:02d}-val_loss{val_loss:.2f}',
-     auto_insert_metric_name=False
-)
+    # ------------------------
+    # 2 CALLBACKS of MODEL
+    # ------------------------
 
-# ------------------------
-# 3 INIT TRAINER
-# ------------------------
-trainer = Trainer.from_argparse_args(args,
-    callbacks=[early_stop,lr_monitor,checkpoint_callback]
-    )    
+    # callbacks
+    early_stop = EarlyStopping(
+        monitor='val_loss',
+        min_delta=0.0,
+        patience=3,
+        verbose=True,
+        mode='min',
+        strict=True,
+    )
+
+    lr_monitor = LearningRateMonitor(logging_interval='step')
+
+    checkpoint_callback = ModelCheckpoint(
+        monitor='val_loss',
+        #dirpath='my/path/',
+        filename='translat-gertoen-epoch{epoch:02d}-val_loss{val_loss:.2f}',
+        auto_insert_metric_name=False
+    )
+
+    # ------------------------
+    # 3 INIT TRAINER
+    # ------------------------
+    trainer = Trainer.from_argparse_args(args,
+        callbacks=[early_stop,lr_monitor,checkpoint_callback]
+        )    
 
 
-seed_everything(42, workers=True)
-translation_dm = TranslationDataModule()
+    seed_everything(42, workers=True)
+    translation_dm = TranslationDataModule()
 
-# Train the Model
-trainer.fit(model, translation_dm)
-trainer.test()
+    # Train the Model
+    trainer.fit(model, translation_dm)
+    trainer.test()
