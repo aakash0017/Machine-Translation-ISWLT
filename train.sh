@@ -9,6 +9,6 @@
 #SBACTH
 #SBATCH --mem=16G
 #SBATCH --gres=gpu:1
-#SBATCH --time=0-06:00:00 
+#SBATCH --time=06:00:00 
 
 python3 train.py
