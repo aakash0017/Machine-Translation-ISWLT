@@ -68,7 +68,7 @@ def preprocess_function(examples):
 
 # Define the Transaltion Module
 class TranslationDataModule(pl.LightningDataModule):
-    def __init__(self, batch_size: int = 16, num_workers: int = 0):
+    def __init__(self, batch_size: int = 16, num_workers: int = 2):
         super().__init__()
    
         # Define the model
@@ -551,7 +551,7 @@ if __name__ == "__main__":
         #profiler='simple',
         deterministic=True,
         max_epochs=1,
-        gpus=3,
+        gpus=1,
         limit_train_batches=0.5,
         limit_val_batches=1.0,
         limit_test_batches=1.0,
