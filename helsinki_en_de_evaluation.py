@@ -604,7 +604,7 @@ parser.set_defaults(
     #profiler='simple',
     deterministic=True,
     max_epochs=1,
-    gpus=0,
+    gpus=1,
     limit_train_batches=0.5,
     limit_val_batches=1.0,
     limit_test_batches=1.0,
@@ -697,7 +697,7 @@ s3.meta.client.download_file(Bucket='mtacl', Key='de_en_checkpoints', Filename='
 ## Use a Pre-Trained model here.  Here using untrained Model just for showing how to do inference
 #model_infer = Translation()
 # model_infer = model
-model_infer = Translation.load_from_checkpoint('/content/de_en_model_checkpoints.ckpt')
+model_infer = Translation.load_from_checkpoint('de_en_model_checkpoints.ckpt')
 model_infer.eval()
 
 test_dataloader = DataLoader(datasets, batch_size=4, num_workers=2)
