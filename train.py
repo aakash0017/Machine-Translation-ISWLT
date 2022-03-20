@@ -551,7 +551,7 @@ if __name__ == "__main__":
         #profiler='simple',
         deterministic=True,
         max_epochs=1,
-        gpus=1,
+        gpus=-1,
         limit_train_batches=0.5,
         limit_val_batches=1.0,
         limit_test_batches=1.0,
