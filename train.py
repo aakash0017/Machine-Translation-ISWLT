@@ -68,7 +68,7 @@ def preprocess_function(examples):
 
 # Define the Transaltion Module
 class TranslationDataModule(pl.LightningDataModule):
-    def __init__(self, batch_size: int = 16, num_workers: int = 2):
+    def __init__(self, batch_size: int = 16, num_workers: int = 48):
         super().__init__()
    
         # Define the model
@@ -511,8 +511,6 @@ class Translation(pl.LightningModule):
         return preds, labels
 
 if __name__ == "__main__":
-    os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
-
     # Load a metric
     metric = load_metric("sacrebleu")
 
