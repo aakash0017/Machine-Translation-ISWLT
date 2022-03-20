@@ -26,7 +26,7 @@ def process_data_to_model_inputs(batch):
   # tokenize the inputs and labels
   inputs = [ex[source_lang] for ex in batch["translation"]]
   targets = [ex[target_lang] for ex in batch["translation"]]
-  inputs = add_verbosity(inputs, targets)
+  inputs = add_verbosity(inputs, targets, test=True)
   model_inputs = tokenizer(inputs, max_length=encoder_max_length, padding="max_length", truncation=True)
   # Setup the tokenizer for targets
   with tokenizer.as_target_tokenizer():
@@ -51,24 +51,15 @@ if __name__ == "__main__":
     print("Initializing XLM-Roberta Tokenizer")
     tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
 
-    print("Tokenizing Validation Data")
-    column_names = dataset['validation'].column_names
-    tokenized_val_data = dataset['validation'].map(
+    print("Tokenizing Test Data")
+    column_names = dataset['test'].column_names
+    tokenized_test_data = dataset['test'].map(
         process_data_to_model_inputs,
         batched=True,
         remove_columns=column_names,
-        desc="Running tokenizer on validation dataset",
+        desc="Running tokenizer on test dataset",
     )
 
-    print("Tokenizing Train Data")
-    column_names = dataset['train'].column_names
-    tokenized_train_data = dataset['train'].map(
-        process_data_to_model_inputs,
-        batched=True,
-        remove_columns=column_names,
-        desc="Running tokenizer on train dataset",
-    )
     s3 = S3FileSystem(key='AKIA4QB2WTN57SCTNAGG', secret='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')
 
-    tokenized_train_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_en_de_xlmr/train', fs=s3)
-    tokenized_val_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_xlmr/validation', fs=s3)
+    tokenized_test_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_xlmr/test', fs=s3)
