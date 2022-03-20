@@ -19,7 +19,6 @@ import warnings, sys
 from tqdm import tqdm
 
 import boto3
-from tqdm.notebook import tqdm
 import torch
 from collections import defaultdict
 from torch.nn import functional as F
