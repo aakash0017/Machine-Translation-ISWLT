@@ -47,9 +47,6 @@ datasets = load_dataset('wmt16', 'de-en', split="test")
 # Load a metric
 metric = load_metric("sacrebleu")
 
-## Summary info about the Metric
-metric
-
 """# Define the Pre-Trained Models"""
 
 source_lang = 'en'
