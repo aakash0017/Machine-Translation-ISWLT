@@ -1,4 +1,7 @@
-data/fr/dev
-data/fr/train
-data/fr/tst-COMMON
-data/.ipynb_checkpoints
+data-mustc/fr/dev
+data-mustc/fr/train
+data-mustc/fr/tst-COMMON
+data-mustc/de
+data-mustc/.ipynb_checkpoints
+isometric-slt
+data
