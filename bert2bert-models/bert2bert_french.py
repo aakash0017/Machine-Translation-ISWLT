@@ -11,12 +11,15 @@ Original file is located at
 
 import boto3
 import os
+import torch
 import datasets
 from datasets import load_dataset
 from transformers import AutoTokenizer, EncoderDecoderModel, Seq2SeqTrainer, Seq2SeqTrainingArguments, DataCollatorForSeq2Seq
 from s3fs import S3FileSystem
 
+# setting new cuda environment
 os.environ["CUDA_VISIBLE_DEVICES"]="1"
+print(torch.cuda.current_device())
 
 dataset = load_dataset('enimai/must_c_french')
 
