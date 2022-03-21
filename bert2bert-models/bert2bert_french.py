@@ -69,38 +69,37 @@ def process_data_to_model_inputs(batch):
 s3 = S3FileSystem(key='AKIA4QB2WTN57SCTNAGG', secret='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')
 
 # tokenize validation data
-column_names = dataset['validation'].column_names
-tokenized_val_data = dataset['validation'].map(
-    process_data_to_model_inputs,
-    batched=True,
-    remove_columns = column_names,
-    desc="tokenizing validation data"
-)
-tokenized_val_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/validation', fs=s3)
+# column_names = dataset['validation'].column_names
+# tokenized_val_data = dataset['validation'].map(
+#     process_data_to_model_inputs,
+#     batched=True,
+#     remove_columns = column_names,
+#     desc="tokenizing validation data"
+# )
+# tokenized_val_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/validation', fs=s3)
 
 # tokenize train data
-column_names = dataset['train'].column_names
-tokenized_train_data = dataset['train'].map(
-    process_data_to_model_inputs,
-    batched=True,
-    remove_columns = column_names,
-    desc="tokenizing validation data"
-)
-tokenized_train_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/train', fs=s3)
+# column_names = dataset['train'].column_names
+# tokenized_train_data = dataset['train'].map(
+#     process_data_to_model_inputs,
+#     batched=True,
+#     remove_columns = column_names,
+#     desc="tokenizing train data"
+# )
+# tokenized_train_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/train', fs=s3)
 
 # tokenize test data
 # changes test=True under add_verbosity function call in process_data_to_model_inputs
-column_names = dataset['test'].column_names
-tokenized_test_data = dataset['test'].map(
-    process_data_to_model_inputs,
-    batched=True,
-    remove_columns = column_names,
-    desc="tokenizing validation data"
-)
-tokenized_test_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/test', fs=s3)
+# column_names = dataset['test'].column_names
+# tokenized_test_data = dataset['test'].map(
+#     process_data_to_model_inputs,
+#     batched=True,
+#     remove_columns = column_names,
+#     desc="tokenizing test data"
+# )
+# tokenized_test_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/test', fs=s3)
 
 # Extract pre-tokenized data 
-s3 = S3FileSystem(key='AKIA4QB2WTN57SCTNAGG', secret='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')
 
 tokenized_train_data = datasets.load_from_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/train', fs=s3)
 tokenized_test_data = datasets.load_from_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/test', fs=s3)
