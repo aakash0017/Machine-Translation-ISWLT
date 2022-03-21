@@ -27,16 +27,29 @@ def process_data_to_model_inputs(batch):
   inputs = [ex[source_lang] for ex in batch["translation"]]
   targets = [ex[target_lang] for ex in batch["translation"]]
   inputs = add_verbosity(inputs, targets)
-  model_inputs = tokenizer(inputs, max_length=encoder_max_length, padding="max_length", truncation=True)
+  model_inputs = tokenizer(inputs, max_length=encoder_max_length, padding=False, truncation=True)
   # Setup the tokenizer for targets
   with tokenizer.as_target_tokenizer():
-      labels = tokenizer(targets, max_length=decoder_max_length, padding="max_length", truncation=True)
+      labels = tokenizer(targets, max_length=decoder_max_length, padding=False, truncation=True)
   model_inputs["decoder_input_ids"] = labels.input_ids
   model_inputs["decoder_attention_mask"] = labels.attention_mask
   model_inputs["labels"] = labels.input_ids.copy()
-  # because BERT automatically shifts the labels, the labels correspond exactly to `decoder_input_ids`. 
-  # We have to make sure that the PAD token is ignored
-  model_inputs["labels"] = [[-100 if token == tokenizer.pad_token_id else token for token in labels] for labels in model_inputs["labels"]]
+  
+  return model_inputs
+
+def process_data_to_model_inputs_test(batch):
+  # tokenize the inputs and labels
+  inputs = [ex[source_lang] for ex in batch["translation"]]
+  targets = [ex[target_lang] for ex in batch["translation"]]
+  inputs = add_verbosity(inputs, targets)
+  model_inputs = tokenizer(inputs, max_length=encoder_max_length, padding=False, truncation=True)
+  # Setup the tokenizer for targets
+  with tokenizer.as_target_tokenizer():
+      labels = tokenizer(targets, max_length=decoder_max_length, padding=False, truncation=True)
+  model_inputs["decoder_input_ids"] = labels.input_ids
+  model_inputs["decoder_attention_mask"] = labels.attention_mask
+  model_inputs["labels"] = labels.input_ids.copy()
+
   return model_inputs
 
 if __name__ == "__main__":
@@ -60,6 +73,15 @@ if __name__ == "__main__":
         desc="Running tokenizer on validation dataset",
     )
 
+    print("Tokenizing Test Data")
+    column_names = dataset['test'].column_names
+    tokenized_test_data = dataset['test'].map(
+        process_data_to_model_inputs_test,
+        batched=True,
+        remove_columns=column_names,
+        desc="Running tokenizer on test dataset",
+    )
+
     print("Tokenizing Train Data")
     column_names = dataset['train'].column_names
     tokenized_train_data = dataset['train'].map(
@@ -70,5 +92,6 @@ if __name__ == "__main__":
     )
     s3 = S3FileSystem(key='AKIA4QB2WTN57SCTNAGG', secret='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')
 
-    tokenized_train_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_en_de_xlmr/train', fs=s3)
+    tokenized_train_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_xlmr/train', fs=s3)
     tokenized_val_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_xlmr/validation', fs=s3)
+    tokenized_test_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_xlmr/test', fs=s3)
