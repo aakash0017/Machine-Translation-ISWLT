@@ -100,9 +100,11 @@ s3 = S3FileSystem(key='AKIA4QB2WTN57SCTNAGG', secret='GcJ6N4E23VEdkRymcrFWPu24Ky
 # tokenized_test_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/test', fs=s3)
 
 # Extract pre-tokenized data 
-
+print("Loading train data")
 tokenized_train_data = datasets.load_from_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/train', fs=s3)
+print("Loading test data")
 tokenized_test_data = datasets.load_from_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/test', fs=s3)
+print("Loading validation data")
 tokenized_val_data = datasets.load_from_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/validation', fs=s3)
 
 tokenized_train_data.set_format(
@@ -116,6 +118,7 @@ tokenized_test_data.set_format(
 )
 
 # Initialize Encoder-Decoder Model using XLM-Roberta checkpoints
+print("Creating bert based Encoder-Decoder model")
 bert2bert = EncoderDecoderModel.from_encoder_decoder_pretrained(model_checkpoint, model_checkpoint)
 
 # set special tokens
@@ -170,6 +173,7 @@ training_args = Seq2SeqTrainingArguments(
 )
 
 # instantiate trainer
+print("Instantiating training procedure")
 trainer = Seq2SeqTrainer(
     model=bert2bert,
     tokenizer=tokenizer,
