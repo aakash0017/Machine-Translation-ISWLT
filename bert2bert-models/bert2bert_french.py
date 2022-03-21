@@ -161,7 +161,7 @@ def compute_metrics(pred):
         "rouge2_fmeasure": round(rouge_output.fmeasure, 4),
     }
 
-batch_size=32
+batch_size=128
 # set training arguments - these params are not really tuned, feel free to change
 training_args = Seq2SeqTrainingArguments(
     output_dir="./output",
