@@ -10,10 +10,13 @@ Original file is located at
 # !pip install transformers datasets sentencepiece s3fs git-python==1.0.3 rouge_score sacrebleu boto3 --quiet
 
 import boto3
+import os
 import datasets
 from datasets import load_dataset
 from transformers import AutoTokenizer, EncoderDecoderModel, Seq2SeqTrainer, Seq2SeqTrainingArguments, DataCollatorForSeq2Seq
 from s3fs import S3FileSystem
+
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
 dataset = load_dataset('enimai/must_c_french')
 
