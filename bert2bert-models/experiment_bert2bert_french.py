@@ -10,18 +10,12 @@ Original file is located at
 # !pip install transformers datasets sentencepiece s3fs git-python==1.0.3 rouge_score sacrebleu boto3 --quiet
 
 import boto3
-import os
-import torch
 import datasets
 from datasets import load_dataset
 from transformers import AutoTokenizer, EncoderDecoderModel, Seq2SeqTrainer, Seq2SeqTrainingArguments, DataCollatorForSeq2Seq
 from s3fs import S3FileSystem
 import warnings
 warnings.simplefilter(action='ignore', category=Warning)
-
-# setting new cuda environment
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
-print(torch.cuda.current_device())
 
 dataset = load_dataset('enimai/must_c_french')
 
@@ -57,14 +51,34 @@ def process_data_to_model_inputs(batch):
   # tokenize the inputs and labels
   source, target = batch[source_lang], batch[target_lang]
   # source = add_verbosity(source, target)
+  source = add_verbosity(source, target)
+  inputs = tokenizer(source, padding="max_length", truncation=True, max_length=encoder_max_length)
+  outputs = tokenizer(target, padding="max_length", truncation=True, max_length=decoder_max_length)
+
+  batch["input_ids"] = inputs.input_ids
+  batch["attention_mask"] = inputs.attention_mask
+  # batch["decoder_input_ids"] = outputs.input_ids
+  # batch["decoder_attention_mask"] = outputs.attention_mask
+  batch["labels"] = outputs.input_ids.copy()
+
+  # because BERT automatically shifts the labels, the labels correspond exactly to `decoder_input_ids`. 
+  # We have to make sure that the PAD token is ignored
+  batch["labels"] = [[-100 if token == tokenizer.pad_token_id else token for token in labels] for labels in batch["labels"]]
+
+  return batch
+
+def process_data_to_model_inputs_test(batch):
+  # tokenize the inputs and labels
+  source, target = batch[source_lang], batch[target_lang]
+  # source = add_verbosity(source, target)
   source = add_verbosity(source, target, test=True)
   inputs = tokenizer(source, padding="max_length", truncation=True, max_length=encoder_max_length)
   outputs = tokenizer(target, padding="max_length", truncation=True, max_length=decoder_max_length)
 
   batch["input_ids"] = inputs.input_ids
   batch["attention_mask"] = inputs.attention_mask
-  batch["decoder_input_ids"] = outputs.input_ids
-  batch["decoder_attention_mask"] = outputs.attention_mask
+  # batch["decoder_input_ids"] = outputs.input_ids
+  # batch["decoder_attention_mask"] = outputs.attention_mask
   batch["labels"] = outputs.input_ids.copy()
 
   # because BERT automatically shifts the labels, the labels correspond exactly to `decoder_input_ids`. 
@@ -74,59 +88,52 @@ def process_data_to_model_inputs(batch):
   return batch
 
 # configure s3
-s3 = S3FileSystem(key='AKIA4QB2WTN57SCTNAGG', secret='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')
+# s3 = S3FileSystem(key='AKIA4QB2WTN57SCTNAGG', secret='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')
 
 # tokenize validation data
-# column_names = dataset['validation'].column_names
-# tokenized_val_data = dataset['validation'].map(
-#     process_data_to_model_inputs,
-#     batched=True,
-#     remove_columns = column_names,
-#     desc="tokenizing validation data"
-# )
+print("tokenize validation data")
+column_names = dataset['validation'].column_names
+tokenized_val_data = dataset['validation'].select(range(16)).map(
+    process_data_to_model_inputs,
+    batched=True,
+    remove_columns = column_names,
+    desc="tokenizing validation data"
+)
 # tokenized_val_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/validation', fs=s3)
 
 # tokenize train data
-# column_names = dataset['train'].column_names
-# tokenized_train_data = dataset['train'].map(
-#     process_data_to_model_inputs,
-#     batched=True,
-#     remove_columns = column_names,
-#     desc="tokenizing train data"
-# )
+print("tokenize train data")
+column_names = dataset['train'].column_names
+tokenized_train_data = dataset['train'].select(range(32)).map(
+    process_data_to_model_inputs,
+    batched=True,
+    remove_columns = column_names,
+    desc="tokenizing train data"
+)
 # tokenized_train_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/train', fs=s3)
 
 # tokenize test data
+print("tokenize test data")
 # changes test=True under add_verbosity function call in process_data_to_model_inputs
-# column_names = dataset['test'].column_names
-# tokenized_test_data = dataset['test'].map(
-#     process_data_to_model_inputs,
-#     batched=True,
-#     remove_columns = column_names,
-#     desc="tokenizing test data"
-# )
-# tokenized_test_data.save_to_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/test', fs=s3)
-
-# Extract pre-tokenized data 
-print("Loading train data")
-tokenized_train_data = datasets.load_from_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/train', fs=s3)
-print("Loading test data")
-tokenized_test_data = datasets.load_from_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/test', fs=s3)
-print("Loading validation data")
-tokenized_val_data = datasets.load_from_disk('s3://mtacl/tokenized_data_enc_dec_french_xlmr/validation', fs=s3)
+column_names = dataset['test'].column_names
+tokenized_test_data = dataset['test'].map(
+    process_data_to_model_inputs,
+    batched=True,
+    remove_columns = column_names,
+    desc="tokenizing test data"
+)
 
 tokenized_train_data.set_format(
-    type="torch", columns=["input_ids", "attention_mask", "decoder_input_ids", "decoder_attention_mask", "labels"],
+    type="torch", columns=["input_ids", "attention_mask", "labels"],
 )
 tokenized_val_data.set_format(
-    type="torch", columns=["input_ids", "attention_mask", "decoder_input_ids", "decoder_attention_mask", "labels"],
+    type="torch", columns=["input_ids", "attention_mask", "labels"],
 )
 tokenized_test_data.set_format(
-    type="torch", columns=["input_ids", "attention_mask", "decoder_input_ids", "decoder_attention_mask", "labels"],
+    type="torch", columns=["input_ids", "attention_mask", "labels"],
 )
 
 # Initialize Encoder-Decoder Model using XLM-Roberta checkpoints
-print("Creating bert based Encoder-Decoder model")
 bert2bert = EncoderDecoderModel.from_encoder_decoder_pretrained(model_checkpoint, model_checkpoint)
 
 # set special tokens
@@ -163,7 +170,7 @@ def compute_metrics(pred):
         "rouge2_fmeasure": round(rouge_output.fmeasure, 4),
     }
 
-batch_size=32
+batch_size=2
 # set training arguments - these params are not really tuned, feel free to change
 training_args = Seq2SeqTrainingArguments(
     output_dir="./output",
@@ -171,17 +178,17 @@ training_args = Seq2SeqTrainingArguments(
     per_device_train_batch_size=batch_size,
     per_device_eval_batch_size=batch_size,
     predict_with_generate=True,
-    logging_steps=1000,  # set to 1000 for full training
-    save_steps=500,  # set to 500 for full training
-    eval_steps=8000,  # set to 8000 for full training
-    warmup_steps=2000,  # set to 2000 for full training
+    logging_steps=2,  # set to 1000 for full training
+    save_steps=16,  # set to 500 for full training
+    eval_steps=4,  # set to 8000 for full training
+    warmup_steps=1,  # set to 2000 for full training
+    max_steps=16, # delete for full training
     overwrite_output_dir=True,
     save_total_limit=3,
     fp16=True, 
 )
 
 # instantiate trainer
-print("Instantiating training procedure")
 trainer = Seq2SeqTrainer(
     model=bert2bert,
     tokenizer=tokenizer,
@@ -191,3 +198,4 @@ trainer = Seq2SeqTrainer(
     eval_dataset=tokenized_val_data,
 )
 trainer.train()
+
