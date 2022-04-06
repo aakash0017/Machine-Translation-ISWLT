@@ -31,26 +31,6 @@ tqdm.pandas()
 access_key = "" # enter wandb secret_accces_key
 wandb.login(key=access_key)
 
-# download training data from s3
-session = boto3.Session(
-    aws_access_key_id='AKIA4QB2WTN57SCTNAGG',
-    aws_secret_access_key='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',
-)
-s3 = session.resource('s3')
-s3.meta.client.download_file(Bucket='mtacl', Key='fr_en_train_data', Filename='fr_en_test.csv')
-
-# for logging loss to wandb.ai
-access_key = "" # enter wandb secret_accces_key
-wandb.login(key=access_key)
-
-# download training data from s3
-session = boto3.Session(
-    aws_access_key_id='AKIA4QB2WTN57SCTNAGG',
-    aws_secret_access_key='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',
-)
-s3 = session.resource('s3')
-s3.meta.client.download_file(Bucket='mtacl', Key='fr_en_train_data', Filename='fr_en_test.csv')
-
 # read train data as pandas DataFrame
 test_df = pd.read_csv('fr_en_test.csv')
 test_df = test_df[["en", "fr"]]

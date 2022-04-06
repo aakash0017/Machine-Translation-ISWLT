@@ -31,15 +31,7 @@ tqdm.pandas()
 access_key = "" # enter wandb secret_accces_key
 wandb.login(key=access_key)
 
-# download training data from s3
-session = boto3.Session(
-    aws_access_key_id='AKIA4QB2WTN57SCTNAGG',
-    aws_secret_access_key='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',
-)
-s3 = session.resource('s3')
-s3.meta.client.download_file(Bucket='mtacl', Key='fr_en_train_data', Filename='fr_en_train.csv')
-
-# read train data as pandas DataFrame
+# read train data as Pandas DataFrame https://iwslt-data.s3.ap-south-1.amazonaws.com/fr_en_train_data
 train_df = pd.read_csv('fr_en_train.csv')
 train_df = train_df[["en", "fr"]]
 train_df.columns = ["input_text", "target_text"]
@@ -108,15 +100,3 @@ model.train_model(train_df, eval_data=eval_df)
 
 # Optional: Evaluate the model. We'll test it properly anyway.
 results = model.eval_model(eval_df, verbose=True)
-
-# model_args = T5Args()
-# model_args.max_length = 100
-# model_args.length_penalty = 2.5
-# model_args.repetition_penalty = 1.5
-# model_args.num_beams = 5
-
-# model = T5Model("mt5", "all/best_model", args=model_args)
-
-# preds = model.predict(validation.input_text.values.tolist())
-
-# validation["preds"] = preds

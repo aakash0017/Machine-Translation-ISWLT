@@ -96,16 +96,3 @@ model = T5Model("mt5", "checkpoint-7935-epoch-1", args=model_args)
 
 # Train the model
 model.train_model(train_df, eval_data=eval_df)
-
-# results = model.eval_model(eval_df, verbose=True)
-
-# !unzip /content/mt5_checkpoitns_fr.zip
-# model_args = T5Args()
-# model_args.max_length = 100
-# model_args.length_penalty = 2.5
-# model_args.repetition_penalty = 1.5
-# model_args.num_beams = 5
-
-# model = T5Model("mt5", "all/best_model", args=model_args)
-# preds = model.predict(validation.input_text.values.tolist())
-# validation["preds"] = preds
